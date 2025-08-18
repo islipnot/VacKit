@@ -1,12 +1,22 @@
 #include "pch.hpp"
 #include "hooks.hpp"
 
+// Globals
+
+static int(__stdcall* oRunfunc)(int, DWORD*, UINT, char*, size_t*);
+
+static std::mutex CallLogMutex, ParamLogMutex;
+
+// Helpers
+
 #define LogMsgW(msg) _LogMsgW(msg, _ReturnAddress())
 
 #define LogMsgA(msg) _LogMsgA(msg, _ReturnAddress())
 
 void _LogMsgW(const std::wstring& msg, void* RetAddr)
 {
+    std::lock_guard<std::mutex> lock(CallLogMutex);
+
     std::wofstream log("vLog.txt", std::ios::out | std::ios::app);
 
     if (log.is_open())
@@ -26,6 +36,8 @@ void _LogMsgW(const std::wstring& msg, void* RetAddr)
 
 void _LogMsgA(const std::string& msg, void* RetAddr)
 {
+    std::lock_guard<std::mutex> lock(CallLogMutex);
+
     std::ofstream log("vLog.txt", std::ios::out | std::ios::app);
 
     if (log.is_open())
@@ -91,22 +103,31 @@ int WINAPI hkWideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideChar
 
 // VAC module hooks
 
-static int(__stdcall* oRunfunc)(int, DWORD*, UINT, char*, size_t*);
-
 int __stdcall hkRunfunc(int a1, DWORD* a2, UINT a3, char* a4, size_t* a5)
 {
     LogMsgA("_runfunc@20");
 
-    /*if (a2)
+    std::lock_guard<std::mutex> lock(ParamLogMutex);
+
+    std::ofstream ParamDump("pLog.txt", std::ios::out | std::ios::app);
+    if (ParamDump.is_open())
     {
-        std::ofstream ParamDump("rf_params.txt", std::ios::out | std::ios::app);
-        if (ParamDump.is_open())
+        if (!IsBadReadPtr(a2, 16))
         {
-            ParamDump.write((const char*)&a2[1], 160);
-            ParamDump << "\n\n/////// DUMP END \\\\\\\\\\\\\\\n\n";
-            ParamDump.close();
+            ParamDump << "{{ A2 DUMP START (16 BYTES) }}\n\n";
+            ParamDump.write(reinterpret_cast<const char*>(a2), 16);
+            ParamDump << "\n\n{{ A2 DUMP END }}\n\n";
         }
-    }*/
+
+        if (!IsBadReadPtr(&a2[4], 160))
+        {
+            ParamDump << "{{ &A2[4] DUMP START (160 BYTES) }}\n\n";
+            ParamDump.write(reinterpret_cast<const char*>(&a2[4]), 160);
+            ParamDump << "\n\n{{ &A2[4] DUMP END }}\n\n";
+        }
+
+        ParamDump.close();
+    }
 
 	return oRunfunc(a1, a2, a3, a4, a5);
 }

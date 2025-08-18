@@ -9,6 +9,7 @@
 #include <winternl.h>
 
 #include <thread>
+#include <mutex>
 #include <fstream>
 #include <string>
 
