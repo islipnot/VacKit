@@ -1,35 +1,6 @@
 #pragma once
 
 //
-//// HELPERS
-//
-
-#define LogMsgW(msg) _LogMsgW(msg, _ReturnAddress())
-
-#define LogMsgA(msg) _LogMsgA(msg, _ReturnAddress())
-
-void _LogMsgW(const std::wstring& msg, void* RetAddr);
-
-void _LogMsgA(const std::string& msg, void* RetAddr);
-
-template <typename t> auto CreateWrappedHook(BYTE* wrapper, SIZE_T WrapperSz, int RetIndex, void* pHook, DWORD_PTR WrapperRetAddr, DWORD_PTR pHookInsertion) -> t
-{
-    void* const pWrapper = VirtualAlloc(nullptr, WrapperSz, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-    if (!pWrapper) return nullptr;
-
-    memcpy(&wrapper[RetIndex], &WrapperRetAddr, sizeof(void*));
-    memcpy(pWrapper, wrapper, WrapperSz);
-
-    if (MH_CreateHook(reinterpret_cast<void*>(pHookInsertion), pHook, nullptr) != MH_OK)
-    {
-        VirtualFree(pWrapper, 0, MEM_COMMIT | MEM_RELEASE);
-        return nullptr;
-    }
-
-    return reinterpret_cast<t>(pWrapper);
-}
-
-//
 //// TYPES
 //
 
@@ -41,6 +12,8 @@ struct VAC_MAPPING_DATA
 	UINT LoadedModuleCount;
 	void** ModuleBaseList;
 };
+
+typedef int(__stdcall* runfunc)(int, DWORD*, UINT, char*, size_t*);
 
 //
 //// FUNCTION POINTERS
@@ -55,10 +28,6 @@ inline HANDLE(WINAPI* oCreateFileW)(LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES
 inline BOOL(WINAPI* oReadProcessMemory)(HANDLE, LPCVOID, LPVOID, SIZE_T, SIZE_T*);
 
 inline int(WINAPI* oWideCharToMultiByte)(UINT, DWORD, LPCWCH, int, LPSTR, int, LPCCH, LPBOOL);
-
-// steamservice.dll
-
-inline uint32_t*(__cdecl* oGetExportAddress)(VAC_MAPPING_DATA*, const char*);
 
 //
 //// HOOKS
@@ -76,4 +45,4 @@ int WINAPI hkWideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideChar
 
 // steamservice.dll
 
-uint32_t* hkGetExportAddress(VAC_MAPPING_DATA* ModuleData, const char* ExportName);
+int __stdcall hkRunfunc(runfunc, int a1, DWORD* a2, UINT a3, char* a4, size_t* a5);

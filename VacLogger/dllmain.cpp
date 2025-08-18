@@ -1,72 +1,56 @@
 #include "pch.hpp"
 #include "hooks.hpp"
+#include "tools.hpp"
 
 #define CreateHookApi(dll, fn, dst, src) MH_CreateHookApi(dll, fn, dst, reinterpret_cast<void**>(src))
-
-static BYTE* FindPattern(const wchar_t* ModuleName, const char* ptrn, int sz, int offset)
-{
-    const HMODULE hModule = GetModuleHandle(ModuleName);
-    MODULEINFO ModuleInfo;
-
-    if (hModule && GetModuleInformation(GetCurrentProcess(), hModule, &ModuleInfo, sizeof(ModuleInfo)))
-    {
-        for (BYTE* current = reinterpret_cast<BYTE*>(hModule), *end = (current + ModuleInfo.SizeOfImage); current < end; ++current)
-        {
-            bool found = true;
-            std::string TempPtrn = ptrn;
-
-            for (int i = 0; i < sz; ++i)
-            {
-                if (TempPtrn[0] == '?')
-                {
-                    TempPtrn.erase(0, 2);
-                    continue;
-                }
-
-                if (current[i] != std::stoi(TempPtrn, nullptr, 16))
-                {
-                    found = false;
-                    break;
-                }
-
-                if (TempPtrn.find(' ') != std::string::npos)
-                {
-                    TempPtrn.erase(0, 3);
-                }
-            }
-
-            if (found) return current + offset;
-        }
-    }
-
-    return nullptr;
-}
 
 static void ThreadEntry()
 {
     // steamservice.dll
 
     {
-        BYTE* pTarget = FindPattern(L"steamservice.dll", "8B 70 ? 8B 48", 5, -10);
+        BYTE* pRunfuncCall = FindPattern(L"steamservice.dll", "FF D0 89 43 ? C7 45 ? ? ? ? ? EB ? 8B 45 ? 89 45 ? 8B 75 ? B9 ? ? ? ? 8B 36 8D 7D ? F3 A5 C7 45 ? ? ? ? ? 8B 45 ? C3 8B 65 ? 8B 5D ? 8B 43 ? 8B 7D", 57, 0);
 
-        if (pTarget)
+        if (pRunfuncCall)
         {
             BYTE wrapper[] =
             {
-                0x55,             // push ebp
-                0x8B, 0xEC,       // mov ebp, esp
-                0x51,             // push ecx
-                0x8B, 0x45, 0x08, // mov eax, [ebp+8]
-                0xB9, 0,0,0,0,    // mov ecx, MMap::GetExportAddress
-                0xFF, 0xE1        // jmp ecx
+                0x50,             // push eax
+                0xB8, 0,0,0,0,    // mov eax, hkRunfunc
+                0xFF, 0xD0,       // call eax
+                0x89, 0x43, 0x10, // mov [ebx+16], eax
+                0x68, 0,0,0,0,    // push pRunfuncCall+5
+                0xC3              // ret
             };
 
-            oGetExportAddress = CreateWrappedHook<decltype(oGetExportAddress)>(wrapper, sizeof(wrapper), 8, hkGetExportAddress, (DWORD)(pTarget + 7), (DWORD)pTarget);
-            
-            char msg[50];
-            sprintf_s(msg, sizeof(msg), "Hook set on MMap::GetExportAddress: %p", pTarget);
-            LogMsgA(msg);
+            // Allocating wrapper
+
+            void* pWrapper = VirtualAlloc(nullptr, sizeof(wrapper), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+
+            if (pWrapper)
+            {
+                // Copying hook and return address to wrapper
+
+                const void* buf = hkRunfunc;
+                memcpy(&wrapper[2], &buf, sizeof(void*));
+
+                buf = pRunfuncCall + 5;
+                memcpy(&wrapper[12], &buf, sizeof(void*));
+
+                memcpy(pWrapper, wrapper, sizeof(wrapper));
+
+                // Creating hook
+
+                if (MH_CreateHook(pRunfuncCall, pWrapper, nullptr) == MH_OK)
+                {
+                    char msg[50];
+                    sprintf_s(msg, sizeof(msg), "Hooked runfunc call: %p", pRunfuncCall);
+                    LogMsgA(msg);
+                }
+                else VirtualFree(pWrapper, 0, MEM_RELEASE);
+            }
         }
+
     }
 
     // Kernel32.dll
