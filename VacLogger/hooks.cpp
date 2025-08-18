@@ -47,21 +47,12 @@ void _LogMsgA(const std::string& msg, void* RetAddr)
 
 HANDLE WINAPI hkOpenFileMappingW(DWORD dwDesiredAccess, BOOL bInheritHandle, LPCWSTR lpName)
 {
-    const HANDLE result = oOpenFileMappingW(dwDesiredAccess, bInheritHandle, lpName);
+    wchar_t msg[260];
+    msg[219] = 0;
+    wprintf_s(msg, sizeof(msg), L"OpenFileMappingW: lpName[%s]", lpName);
+    LogMsgW(msg);
 
-    if (result)
-    {
-        PUBLIC_OBJECT_TYPE_INFORMATION TypeInfo;
-
-        if (NT_SUCCESS(NtQueryObject(result, ObjectTypeInformation, &TypeInfo, sizeof(TypeInfo), nullptr)))
-        {
-            wchar_t msg[520];
-            msg[519] = 0;
-            wprintf_s(msg, sizeof(msg), L"OpenFileMappingW: access[%d], name[%s], ResolvedName[%.*s]", dwDesiredAccess, lpName, TypeInfo.TypeName.Length / sizeof(WCHAR), TypeInfo.TypeName.Buffer);
-        }
-    }
-
-    return result;
+    return oOpenFileMappingW(dwDesiredAccess, bInheritHandle, lpName);
 }
 
 HANDLE WINAPI hkCreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
