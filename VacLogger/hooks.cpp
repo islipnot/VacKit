@@ -2,6 +2,12 @@
 #include "hooks.hpp"
 #include "tools.hpp"
 
+// Globals
+
+typedef void(__thiscall* IceDecrypt)(void* ik, BYTE* ctext, BYTE* ptext);
+
+static IceDecrypt oIceDecrypt[MODULE_COUNT]{};
+
 // Kernel32.dll
 
 HANDLE WINAPI hkOpenFileMappingW(DWORD dwDesiredAccess, BOOL bInheritHandle, LPCWSTR lpName)
@@ -48,53 +54,119 @@ int WINAPI hkWideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideChar
     return oWideCharToMultiByte(CodePage, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr, cbMultiByte, lpDefaultChar, lpUsedDefaultChar);
 }
 
+BOOL hkGetFileInformationByHandle(HANDLE hFile, LPBY_HANDLE_FILE_INFORMATION lpFileInformation)
+{
+    wchar_t path[MAX_PATH];
+    GetFinalPathNameByHandleW(hFile, path, MAX_PATH, FILE_NAME_NORMALIZED);
+
+    std::wstring msg = L"GetFileInformationByHandle: ";
+    msg += path;
+
+    LogMsgW(msg);
+
+    return oGetFileInformationByHandle(hFile, lpFileInformation);
+}
+
 // VAC module hooks
+
+void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
+{
+    // Detecting which module is calling and decrypting next 8 bytes
+
+    const int i = ModuleIndexFromPtr(_ReturnAddress());
+    oIceDecrypt[i](ik, ctext, ptext);
+
+    // Checking the progress of the decryption routine (so it knows when to seperate the dumps)
+    
+    static bool DecryptionStatus[MODULE_COUNT]{};
+    static int DecryptedBytes[MODULE_COUNT]{};
+
+    bool& status = DecryptionStatus[i];
+    int& count = DecryptedBytes[i];
+
+    if (status == DECRYPTING_IMPORTS)
+    {
+        count += 8;
+
+        if (count == 4032)
+        {
+            status = DECRYPTING_PARAMS;
+            count = 0;
+        }
+
+        return;
+    }
+
+    // Dumping decrypted bytes
+
+    std::ofstream file("pdLog.txt", std::ios::out | std::ios::ate); // ignore the lock release warning
+
+    static std::mutex IceDumpMutex;
+    const std::lock_guard<std::mutex> lock(IceDumpMutex);
+
+    if (count == 160)
+    {
+        status = DECRYPTING_IMPORTS;
+        count  = 0;
+    }
+    else
+    {
+        if (!count)
+        {
+            if (static_cast<size_t>(file.tellp()) != 0)
+            {
+                file << "\n\n";
+            }
+
+            file << "**VAC" << std::to_string(i) << " DUMP START**\n\n";
+        }
+
+        file.write(reinterpret_cast<const char*>(ptext), 8);
+        file.close();
+
+        count += 8;
+    }
+}
 
 int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, size_t* a5)
 {
     // Determining which VAC module is being called
 
-    const std::string ModuleSigs[] =
+    const int CurrentModule = ModuleIndexFromPtr(oRunfunc);
+
+    // Hooking IceDecrypt
+
+    if (CurrentModule != -1 && !oIceDecrypt[CurrentModule])
     {
-        "C7 85 46 FF FF FF 6B 43 4B 49 66 C7 85 4A FF FF FF 54 5F 88 95 4C FF FF FF 88 45 84 88 5D 85",                // 1
-        "33 D2 83 C4 14 33 F6 39 53 24 7E 42 8B 6C 24 24 8D 4B 4C 8B 79 F8 85 FF 74 0F 8B 44 24 18",                   // 2
-        "56 55 68 10 04 00 00 FF 50 20 8B 8B 38 02 00 00 89 83 30 02 00 00 85 C0 75 25 81 C9 00 00 01 00",             // 3
-        "66 89 84 24 84 00 00 00 58 6A 25 59 6A 2A 5A 6A 36 66 89 84 24 88 00 00 00 58 6A 21 66 89 84 24 92 00 00 00", // 4
-        "8B 4C 24 44 81 E1 FF 0F 00 00 0B 4C 24 28 66 83 7C 24 50 00 74 06 81 C9 00 10 00 00 8B 75 0C",                // 5
-        "FF 90 90 02 00 00 83 4E 14 10 8B 45 30 A8 20 74 18 8B 47 04 56 57 68 ? ? ? ? 03 C3 FF D0",                    // 6
-        "C7 44 24 4C 48 68 88 06 C7 44 24 50 06 06 06 06 C7 44 24 54 06 06 06 8B",                                     // 7
-        "BB 3D 04 74 C1 8B 8B E7 FE 89 BE 8B 93 E3 FE 89 BE 8B 83 EB FE 89 BE 3B C8 75 E5 0B C2 85 C0",                // 8
-        "FF 50 1C EB 9F C6 44 24 0E 01 FF 90 28 02 00 00 21 74 24 28 89 44 24 34 8B ? ? ? ? ? FF 91 28 02 00 00",      // 9
-        "8B 44 D3 20 83 E0 F0 C1 E6 08 0B 44 24 14 89 44 D3 20 8B 4B 18 0F B6 44 CB 20 0B C6 89 44 CB 20",             // 10
-        "C7 84 24 90 00 00 00 40 00 00 00 89 9C 24 94 00 00 00 89 9C 24 98 00 00 00 FF 15 78 9F 00 10",                // 11
-        "33 FF 5E 47 EB 42 A1 ?? ?? ?? ?? FF 50 70 8B F8 A1 ?? ?? ?? ?? 6A 01 57 FF 90 B8 01 00 00 8B CB",             // 12
-        "50 6A 1B 52 FF 15 DC EE 00 10 39 6C 24 20 74 18 68 F4 01 00 00 8D 8B 8E 08 00 00 8D 94 24 DC 00 00 00",       // 13
-        "89 44 24 14 FF 34 28 FF 74 24 20 FF 15 2C 6E 00 00 89 44 24 14 85 C0 74 A9 8D 4C 24 2C 51 68"                 // 14
-    };
+        BYTE* pIceDecrypt = FindPattern(nullptr, "0B D8 0F B6 42 ? 0B C8 0F B6 42 ? C1 E1 ? 0B C8 0F B6 42 ? C1 E1 ? 56", 25, -43, oRunfunc);
 
-    int CurrentModule = -1;
-
-    for (int i = 0; i < sizeof(ModuleSigs) / sizeof(std::string); ++i)
-    {
-        const std::string& sig = ModuleSigs[i];
-
-        if (FindPattern(nullptr, sig.c_str(), std::count(sig.begin(), sig.end(), ' ') + 1, 0, oRunfunc))
+        if (pIceDecrypt)
         {
-            CurrentModule = i;
-            break;
+            BYTE wrapper[] =
+            {
+                0x8B, 0x54, 0x24, 0x04, // mov edx, [esp+4]
+                0x53,                   // push ebx
+                0xB8, 0,0,0,0,          // mov eax, IceKey::decrypt+5
+                0xFF, 0xE0              // jmp eax
+            };
+            
+            oIceDecrypt[CurrentModule] = CreateWrappedHook<IceDecrypt>(wrapper, sizeof(wrapper), 6, hkIceDecrypt, (DWORD)(pIceDecrypt + 5), (DWORD)pIceDecrypt);
+            MH_EnableHook(pIceDecrypt);
+
+            LogMsgA("Hooked IceKey::decrypt", pIceDecrypt);
         }
     }
 
-    // Logging the call
-
+    // Logging the call & dumping params
+    
     char CallMsg[35];
+
+    static std::mutex ParamLogMutex;
+    const std::lock_guard<std::mutex> lock(ParamLogMutex);
 
     if (CurrentModule != -1)
     {
-        sprintf_s(CallMsg, sizeof(CallMsg), "_runfunc@20: VAC-%01d, %p", CurrentModule, oRunfunc);
-
-        static std::mutex ParamLogMutex;
-        std::lock_guard<std::mutex> lock(ParamLogMutex);
+        sprintf_s(CallMsg, sizeof(CallMsg), "runfunc: VAC-%01d, %p", CurrentModule, oRunfunc);
 
         // Dumping parameters
 
@@ -113,7 +185,7 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
             ParamDump.close();
         }
     }
-    else sprintf_s(CallMsg, sizeof(CallMsg), "_runfunc@20: %p", oRunfunc);
+    else sprintf_s(CallMsg, sizeof(CallMsg), "runfunc: %p", oRunfunc);
 
     LogMsgA(CallMsg);
 

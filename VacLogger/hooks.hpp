@@ -29,6 +29,8 @@ inline BOOL(WINAPI* oReadProcessMemory)(HANDLE, LPCVOID, LPVOID, SIZE_T, SIZE_T*
 
 inline int(WINAPI* oWideCharToMultiByte)(UINT, DWORD, LPCWCH, int, LPSTR, int, LPCCH, LPBOOL);
 
+inline BOOL(WINAPI* oGetFileInformationByHandle)(HANDLE, LPBY_HANDLE_FILE_INFORMATION);
+
 //
 //// HOOKS
 //
@@ -42,6 +44,8 @@ HANDLE WINAPI hkCreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwS
 BOOL WINAPI hkReadProcessMemory(HANDLE hProcess, LPCVOID lpBaseAddress, LPVOID lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesRead);
 
 int WINAPI hkWideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr, int cchWideChar, LPSTR lpMultiByteStr, int cbMultiByte, LPCCH lpDefaultChar, LPBOOL lpUsedDefaultChar);
+
+BOOL hkGetFileInformationByHandle(HANDLE hFile, LPBY_HANDLE_FILE_INFORMATION lpFileInformation);
 
 // steamservice.dll
 

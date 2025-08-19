@@ -24,7 +24,7 @@ static void IceDecrypt(BYTE* ctext, BYTE* ptext, UINT size, const BYTE* key)
 
 int main()
 {
-	BYTE key[8] = { 0xE7, 0x59, 0x78, 0xE1, 0x4D, 0x48, 0x24, 0x38 };
+	BYTE key[8] = { 0xAC, 0xC3, 0x64, 0xE4, 0xAB, 0x03, 0x1F, 0x8A };
 	IceDecrypt(data, data, sizeof(data), key);
 
 	std::ofstream result("result.txt", std::ios::out | std::ios::binary | std::ios::trunc);

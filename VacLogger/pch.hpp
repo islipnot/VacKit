@@ -12,6 +12,7 @@
 #include <mutex>
 #include <fstream>
 #include <string>
+#include <string_view>
 
 #include "MinHook/MinHook.h"
 

@@ -43,9 +43,7 @@ static void ThreadEntry()
 
                 if (MH_CreateHook(pRunfuncCall, pWrapper, nullptr) == MH_OK)
                 {
-                    char msg[50];
-                    sprintf_s(msg, sizeof(msg), "Hooked runfunc call: %p", pRunfuncCall);
-                    LogMsgA(msg);
+                    LogMsgA("Hooked runfunc call", pRunfuncCall);
                 }
                 else VirtualFree(pWrapper, 0, MEM_RELEASE);
             }
@@ -65,6 +63,8 @@ static void ThreadEntry()
         CreateHookApi(k32, "ReadProcessMemory", hkReadProcessMemory, &oReadProcessMemory);
 
         CreateHookApi(k32, "WideCharToMultiByte", hkWideCharToMultiByte, &oWideCharToMultiByte);
+
+        //CreateHookApi(k32, "GetFileInformationByHandle", hkGetFileInformationByHandle, &oGetFileInformationByHandle);
     }
     
     MH_EnableHook(MH_ALL_HOOKS);
