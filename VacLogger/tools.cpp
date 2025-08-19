@@ -71,10 +71,6 @@ BYTE* FindPattern(PCWSTR ModuleName, PCSTR pattern, int PatternSize, int offset,
 
         TotalSize -= LastRegion; // final region shouldn't be included in search (never needed + itll crash)
 
-        char msg[100];
-        sprintf_s(msg, sizeof(msg), "Scan region/size: %p, %x", AllocationBase, TotalSize);
-        LogMsgA(msg, ScanRegion);
-
         if (AllocationBase && TotalSize)
         {
             return FindPatternInternal(static_cast<BYTE*>(AllocationBase), TotalSize, pattern, PatternSize) + offset;
