@@ -1,5 +1,7 @@
 # VacLogger
 
+If you found this off unknowncheats, I'd appreciate telling me about any bugs in dms!
+
 This VAC logger must be injected into `steam.exe` (steam must have admin) before any game is launched. It will log every call 
 to `ReadProcessMemory`, `CreateFileW`, `OpenFileMappingW`, and `WideCharToMultiByte`. More importantly though, it hooks steam's 
 call to `_runfunc@20`. When runfunc is called, it will use pattern scanning to detect which module it is in. It will then hook 

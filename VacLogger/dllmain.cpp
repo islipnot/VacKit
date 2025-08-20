@@ -45,9 +45,14 @@ static void ThreadEntry()
                 {
                     LogMsgA("Hooked runfunc call", pRunfuncCall);
                 }
-                else VirtualFree(pWrapper, 0, MEM_RELEASE);
+                else
+                {
+                    LogMsgA("ERROR: failed to hook runfunc call", pRunfuncCall);
+                    VirtualFree(pWrapper, 0, MEM_RELEASE);
+                }
             }
         }
+        else LogMsgA("ERROR: failed to locate runfunc call via pattern scanning");
 
     }
 

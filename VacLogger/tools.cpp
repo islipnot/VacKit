@@ -82,23 +82,31 @@ BYTE* FindPattern(PCWSTR ModuleName, PCSTR pattern, int PatternSize, int offset,
 
 int ModuleIndexFromPtr(void* ScanRegion)
 {
-    const std::string_view ModuleSigs[] =
+    /* UPDATING PATTERNS
+    * 
+    * All of the patterns below are randomly chosen by me from each module, allowing 
+    * module identification within hooks. I personally chose instructions I found to be 
+    * pretty unique to each given module, and I suggest doing the same if you need to update 
+    * them. The notes next to the sigs are just unique stuff about the module so yk which theyre for
+    */
+
+    constexpr std::string_view ModuleSigs[] =
     {
-        "C7 85 46 FF FF FF 6B 43 4B 49 66 C7 85 4A FF FF FF 54 5F 88 95 4C FF FF FF 88 45 84 88 5D 85",                // 1
-        "33 D2 83 C4 14 33 F6 39 53 24 7E 42 8B 6C 24 24 8D 4B 4C 8B 79 F8 85 FF 74 0F 8B 44 24 18",                   // 2
-        "56 55 68 10 04 00 00 FF 50 20 8B 8B 38 02 00 00 89 83 30 02 00 00 85 C0 75 25 81 C9 00 00 01 00",             // 3
-        "66 89 84 24 84 00 00 00 58 6A 25 59 6A 2A 5A 6A 36 66 89 84 24 88 00 00 00 58 6A 21 66 89 84 24 92 00 00 00", // 4
-        "8B 4C 24 44 81 E1 FF 0F 00 00 0B 4C 24 28 66 83 7C 24 50 00 74 06 81 C9 00 10 00 00 8B 75 0C",                // 5
-        "FF 90 90 02 00 00 83 4E 14 10 8B 45 30 A8 20 74 18 8B 47 04 56 57 68 ? ? ? ? 03 C3 FF D0",                    // 6
-        "C7 44 24 4C 48 68 88 06 C7 44 24 50 06 06 06 06 C7 44 24 54 06 06 06 8B",                                     // 7
-        "BB 3D 04 74 C1 8B 8B E7 FE 89 BE 8B 93 E3 FE 89 BE 8B 83 EB FE 89 BE 3B C8 75 E5 0B C2 85 C0",                // 8
-        "FF 50 1C EB 9F C6 44 24 0E 01 FF 90 28 02 00 00 21 74 24 28 89 44 24 34 8B ? ? ? ? ? FF 91 28 02 00 00",      // 9
-        "8B 44 D3 20 83 E0 F0 C1 E6 08 0B 44 24 14 89 44 D3 20 8B 4B 18 0F B6 44 CB 20 0B C6 89 44 CB 20",             // 10
-        "C7 84 24 90 00 00 00 40 00 00 00 89 9C 24 94 00 00 00 89 9C 24 98 00 00 00 FF 15 78 9F 00 10",                // 11
-        "33 FF 5E 47 EB 42 A1 ?? ?? ?? ?? FF 50 70 8B F8 A1 ?? ?? ?? ?? 6A 01 57 FF 90 B8 01 00 00 8B CB",             // 12
-        "50 6A 1B 52 FF 15 DC EE 00 10 39 6C 24 20 74 18 68 F4 01 00 00 8D 8B 8E 08 00 00 8D 94 24 DC 00 00 00",       // 13
-        "89 44 24 14 FF 34 28 FF 74 24 20 FF 15 2C 6E 00 00 89 44 24 14 85 C0 74 A9 8D 4C 24 2C 51 68"                 // 14
+        "C7 85 46 FF FF FF 6B 43 4B 49 66 C7 85 4A FF FF FF 54 5F 88 95 4C FF FF FF 88 45 84 88 5D 85",                // 1  - NtQuerySystemInformation, volume logging, etc
+        "7E 2F 8B 45 54 03 C6 51 8B CD FF B4 C5 FC 0F 00 00 FF B4 C5 F8 0F 00 00 6A 00 FF 74 85 58 E8",                // 2  - tlhelp process enumeration & NtQuerySystemInformation(SystemHandleInformation)
+        "83 8B 38 02 00 00 20 BF 06 02 00 00 F6 44 24 1B 04 0F 84 D7 01 00 00 8D 44 24 14 50 6A 4C 8D 83 58 04 00 00", // 3  - PEB rpm's from flagged processes enumerated by previous module
+        "6A 68 88 44 24 49 88 44 24 50 88 44 24 28 88 44 24 2E 88 44 24 3A 88 44 24 40 58 6A 36 66 89 44 24 70 58",    // 4  - MapViewOfFile calls
+        "8D 4C 24 1C 51 55 8B 80 64 01 00 00 FF D0 85 C0 75 D7 8B 8B 50 02 00 00 85 C9 0F 8E D6 00 00 00 C1 E1 05",    // 5  - Module32FirstW calls
+        "03 C3 FF D0 83 C4 0C 83 4E 14 20 8B 45 30 A8 40 74 13 68 00 00 01 00 FF 77 08 53 FF ? ? ? ? ? 83 4E 14",      // 6  - Shellcode stuff
+        "88 84 24 B9 00 00 00 C7 44 24 4C 48 68 88 06 C7 44 24 50 06 06 06 06 C7 44 24 54 06 06 06 8B C7 44 24 58 E9", // 7  - BCD queries (HKLM\BCD00000000\Objects)
+        "8B 45 0C 31 46 14 64 8B 0D 18 00 00 00 8B 49 30 0F B6 49 02 89 4D FC 8B 45 FC 89 46 18 8B 45 08 8B 40 64",    // 8  - SharedUserData & PEB::BeingDebugged tick count checks
+        "8B 08 3B 4C F3 28 75 0D 8A 4C 24 0F 38 48 04 75 04 FF 44 F3 2C 47 3B 7C 24 20 72 D9 8B 74 24 14 8B 4C 24 18", // 9  - SYSCALL/SYSENTER stubs with indexes located from first module
+        "8B C1 C7 44 24 3C 6E 77 7A 61 88 4C 24 40 C7 44 24 5C 7A 5B 48 7D C7 44 24 60 52 5F 4D 4D 66 C7 44 24 64 61", // 10 - SetupDiGetClassDevsA call
+        "57 FF 90 10 01 00 00 85 F6 74 2D 8B 4D 08 8B 45 E8 8B 75 0C 6A 04 89 01 8D 45 FC 50 56 E8 ? ? ? ? 6A 04 8D",  // 11 - OpenSCManagerA call
+        "33 FF 5E 47 EB 42 A1 ? ? ? ? FF 50 70 8B F8 A1 ? ? ? ? 6A 01 57 FF 90 B8 01 00 00 8B CB",                     // 12 - cpuid
     };
+
+    static_assert(sizeof(ModuleSigs) / sizeof(std::string_view) == MODULE_COUNT, "MODULE_COUNT must match sig count");
 
     for (int i = 0; i < MODULE_COUNT; ++i)
     {
@@ -110,13 +118,20 @@ int ModuleIndexFromPtr(void* ScanRegion)
         }
     }
 
+    char msg[65];
+    sprintf_s(msg, sizeof(msg), "ERROR: failed to identify module index with pointer %p", ScanRegion);
+    LogMsgA(msg);
+
     return -1;
 }
 
 // Call logging
 
+static std::mutex LogMutex;
+
 void LogMsgW(const std::wstring& msg, void* RetAddr)
 {
+    const std::lock_guard<std::mutex> guard(LogMutex);
     std::wofstream log("vLog.txt", std::ios::out | std::ios::app);
 
     if (log.is_open())
@@ -124,14 +139,11 @@ void LogMsgW(const std::wstring& msg, void* RetAddr)
         SYSTEMTIME st;
         GetLocalTime(&st);
 
-        const size_t sz = 30 + msg.size();
+        const size_t sz = 23 + msg.size();
         wchar_t* buffer = new wchar_t[sz];
         swprintf_s(buffer, sz, L"[%02d:%02d:%02d][%p] %ls\n", st.wHour, st.wMinute, st.wSecond, RetAddr, msg.c_str());
 
-        static std::mutex LogMutex;
-        const std::lock_guard<std::mutex> lock(LogMutex);
-
-        log << buffer;
+        log.write(buffer, sz - 1);
         log.close();
 
         delete[] buffer;
@@ -140,6 +152,7 @@ void LogMsgW(const std::wstring& msg, void* RetAddr)
 
 void LogMsgA(const std::string& msg, void* RetAddr)
 {
+    const std::lock_guard<std::mutex> guard(LogMutex);
     std::ofstream log("vLog.txt", std::ios::out | std::ios::app);
 
     if (log.is_open())
@@ -147,14 +160,11 @@ void LogMsgA(const std::string& msg, void* RetAddr)
         SYSTEMTIME st;
         GetLocalTime(&st);
 
-        const size_t sz = 30 + msg.size();
+        const size_t sz = 23 + msg.size();
         char* buffer = new char[sz];
         sprintf_s(buffer, sz, "[%02d:%02d:%02d][%p] %s\n", st.wHour, st.wMinute, st.wSecond, RetAddr, msg.c_str());
 
-        static std::mutex LogMutex;
-        const std::lock_guard<std::mutex> lock(LogMutex);
-
-        log << buffer;
+        log.write(buffer, sz - 1);
         log.close();
 
         delete[] buffer;
