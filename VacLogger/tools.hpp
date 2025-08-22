@@ -4,7 +4,7 @@
 //// MACROS
 //
 
-#define MODULE_COUNT          12
+#define MODULE_COUNT          13
 
 #define DECRYPTING_PARAMS     0
 

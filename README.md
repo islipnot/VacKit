@@ -13,7 +13,7 @@ because a few bytes technically have a use, though it might aswell be ignored.
 
 This is of course all based on my personal dumps of the anti-cheat, and if the pattern scanning fails for you, you simply need 
 to update the patterns. First off, in hooks.cpp, make sure the pattern used to locate the runfunc call works. Next, check tools.cpp 
-and make sure all 14 of the patterns in `ModuleIndexFromPtr` are good. If these aren't working for you simply get a unique pattern 
+and make sure all 12 of the patterns in `ModuleIndexFromPtr` are good. If these aren't working for you simply get a unique pattern 
 from your own dumps that can be used to identify the modules. The way to tell if the module signatures are outdated is by looking at 
 `vLog.txt`, and if the runfunc log doesn't have a number next to it indicating which module it is, that means it failed to identify it.
 

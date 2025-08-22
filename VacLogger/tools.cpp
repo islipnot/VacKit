@@ -104,6 +104,7 @@ int ModuleIndexFromPtr(void* ScanRegion)
         "8B C1 C7 44 24 3C 6E 77 7A 61 88 4C 24 40 C7 44 24 5C 7A 5B 48 7D C7 44 24 60 52 5F 4D 4D 66 C7 44 24 64 61", // 10 - SetupDiGetClassDevsA call
         "57 FF 90 10 01 00 00 85 F6 74 2D 8B 4D 08 8B 45 E8 8B 75 0C 6A 04 89 01 8D 45 FC 50 56 E8 ? ? ? ? 6A 04 8D",  // 11 - OpenSCManagerA call
         "33 FF 5E 47 EB 42 A1 ? ? ? ? FF 50 70 8B F8 A1 ? ? ? ? 6A 01 57 FF 90 B8 01 00 00 8B CB",                     // 12 - cpuid
+        "59 C7 45 DD 58 40 01 03 8D 55 DC C7 45 E1 73 5E 44 56 66 C7 45 E5 55 5B C6 45 E7 52 88 4D E8 C7 45 E9 58 40"
     };
 
     static_assert(sizeof(ModuleSigs) / sizeof(std::string_view) == MODULE_COUNT, "MODULE_COUNT must match sig count");
@@ -111,7 +112,7 @@ int ModuleIndexFromPtr(void* ScanRegion)
     for (int i = 0; i < MODULE_COUNT; ++i)
     {
         const std::string_view& sig = ModuleSigs[i];
-
+        
         if (FindPattern(nullptr, sig.data(), std::count(sig.begin(), sig.end(), ' ') + 1, 0, ScanRegion))
         {
             return i;
