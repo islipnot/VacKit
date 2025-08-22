@@ -24,6 +24,9 @@ static void IceDecrypt(BYTE* ctext, BYTE* ptext, UINT size, const BYTE* key)
 
 int main()
 {
+    // Input the byte array in the data variable in ice.hpp.
+    // I suggest using chatgpt to format the array
+
 	BYTE key[8] = { 0xAC, 0xC3, 0x64, 0xE4, 0xAB, 0x03, 0x1F, 0x8A };
 	IceDecrypt(data, data, sizeof(data), key);
 

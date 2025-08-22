@@ -86,6 +86,8 @@ BOOL WINAPI hkGetFileInformationByHandle(HANDLE hFile, LPBY_HANDLE_FILE_INFORMAT
 
 void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
 {
+    UNREFERENCED_PARAMETER(edx); // IceKey::decrypt uses __thiscall, so this param is a placeholder
+
     // Detecting which module is calling and decrypting next 8 bytes
 
     const int i = ModuleIndexFromPtr(_ReturnAddress());
@@ -97,16 +99,16 @@ void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
     const std::lock_guard<std::mutex> guard(IceMutex);
     
     static bool DecryptionStatus[MODULE_COUNT] {};
-    static int DecryptedBytes[MODULE_COUNT] {};
+    static int  DecryptedBytes  [MODULE_COUNT] {};
 
     bool& status = DecryptionStatus[i];
-    int& count = DecryptedBytes[i];
+    int&  count  = DecryptedBytes[i];
 
-    count += 8;
+    ++count;
 
     if (status == DECRYPTING_IMPORTS)
     {
-        if (count == 4032)
+        if (count == 504) // 4032 / 8 == 504
         {
             status = DECRYPTING_PARAMS;
             count = 0;
@@ -119,20 +121,20 @@ void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
 
     std::ofstream file("pdLog.txt", std::ios::out | std::ios::app | std::ios::ate);
 
-    if (count == 8)
+    if (count == 1)
     {
         if (static_cast<size_t>(file.tellp()) != 0)
         {
             file << "\n\n";
         }
 
-        file << "**VAC" << std::to_string(i) << " DUMP START**\n\n";
+        file << "**VAC" << std::to_string(i + 1) << " DUMP START**\n\n";
     }
 
     file.write(reinterpret_cast<const char*>(ptext), 8);
     file.close();
 
-    if (count == 160)
+    if (count == 20) // 160 / 8 == 20
     {
         if (i != ANTI_DBG_MODULE_INDEX) // this module has no import decryption routine (only SharedUserData and PEB checks)
         {
@@ -187,7 +189,7 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
 
     if (i != -1)
     {
-        sprintf_s(CallMsg, sizeof(CallMsg), "runfunc: VAC-%d, %p", i, oRunfunc);
+        sprintf_s(CallMsg, sizeof(CallMsg), "runfunc: VAC-%d, %p", i + 1, oRunfunc);
 
         // Dumping parameters
 
@@ -195,12 +197,12 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
         if (ParamDump.is_open())
         {
             char DumpMsg[60];
-            sprintf_s(DumpMsg, sizeof(DumpMsg), "VAC-%d.dll!_runfunc@20 param a2[0-176]:\n", i);
+            sprintf_s(DumpMsg, sizeof(DumpMsg), "VAC-%d.dll!_runfunc@20 param a2[0-176]:\n", i + 1);
 
             ParamDump << DumpMsg;
             ParamDump.write(reinterpret_cast<const char*>(a2), 176);
 
-            sprintf_s(DumpMsg, sizeof(DumpMsg), "\n** END OF: VAC-%d.dll!_runfunc@20 param a2[0-176]**\n\n", i);
+            sprintf_s(DumpMsg, sizeof(DumpMsg), "\n** END OF: VAC-%d.dll!_runfunc@20 param a2[0-176]**\n\n", i + 1);
             ParamDump << DumpMsg;
 
             ParamDump.close();

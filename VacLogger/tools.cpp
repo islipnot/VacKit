@@ -87,7 +87,7 @@ int ModuleIndexFromPtr(void* ScanRegion)
     * All of the patterns below are randomly chosen by me from each module, allowing 
     * module identification within hooks. I personally chose instructions I found to be 
     * pretty unique to each given module, and I suggest doing the same if you need to update 
-    * them. The notes next to the sigs are just unique stuff about the module so yk which theyre for
+    * them.
     */
     
     constexpr std::string_view ModuleSigs[] =
@@ -102,10 +102,10 @@ int ModuleIndexFromPtr(void* ScanRegion)
         "8B 45 0C 31 46 14 64 8B 0D 18 00 00 00 8B 49 30 0F B6 49 02 89 4D FC 8B 45 FC 89 46 18 8B 45 08 8B 40 64",    // 8  - SharedUserData tick count checks & PEB::BeingDebugged
         "8B 08 3B 4C F3 28 75 0D 8A 4C 24 0F 38 48 04 75 04 FF 44 F3 2C 47 3B 7C 24 20 72 D9 8B 74 24 14 8B 4C 24 18", // 9  - SYSCALL/SYSENTER stubs with indexes located from first module
         "8B C1 C7 44 24 3C 6E 77 7A 61 88 4C 24 40 C7 44 24 5C 7A 5B 48 7D C7 44 24 60 52 5F 4D 4D 66 C7 44 24 64 61", // 10 - SetupDiGetClassDevsA call
-        "57 FF 90 10 01 00 00 85 F6 74 2D 8B 4D 08 8B 45 E8 8B 75 0C 6A 04 89 01 8D 45 FC 50 56 E8 ? ? ? ? 6A 04 8D",  // 11 - OpenSCManagerA call
+        "6A 0E 66 89 44 24 62 58 66 89 44 24 5C 8D 44 24 5C 89 84 24 80 00 00 00 8D 44 24 78 50 68 01 00 02 00 8D 44", // 11 - NtQueryDirectoryObject
         "33 FF 5E 47 EB 42 A1 ? ? ? ? FF 50 70 8B F8 A1 ? ? ? ? 6A 01 57 FF 90 B8 01 00 00 8B CB",                     // 12 - cpuid
-        "59 C7 45 DD 58 40 01 03 8D 55 DC C7 45 E1 73 5E 44 56 66 C7 45 E5 55 5B C6 45 E7 52 88 4D E8 C7 45 E9 58 40",
-        "8B 51 08 89 44 24 10 89 94 24 D0 00 00 00 89 84 24 D4 00 00 00 89 94 24 A0 00 00 00 89 84 24 A4 00 00 00"
+        "8B 4C 24 10 68 00 01 00 00 89 5C 24 18 8D 56 1C 8B 0C 29 E8 ? ? ? ? 8B 4F 20 8D 96 1C 01 00 00 C7 04 24 00",  // 13 - QueryServiceConfigW (one routine)
+        "74 28 8B C1 33 84 24 90 00 00 00 25 FF FF FF 7F 33 C1 89 46 28 8D 44 24 7C 6A 10 50 8D 46 74 50 E8"           // 14 - 3 routines & direct wvsprintfW import
     };
 
     static_assert(sizeof(ModuleSigs) / sizeof(std::string_view) == MODULE_COUNT, "MODULE_COUNT must match sig count");

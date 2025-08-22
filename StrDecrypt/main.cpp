@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 
     const char mode = argv[2][0];
 
-    if (mode != 'r' && mode != 'x')
+    if ((mode != 'r' || mode != 'R') && (mode != 'x' || mode != 'X'))
     {
         std::cout << "ERROR: unrecognized decryption mode\n";
         PrintArgs();
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 
     // Formatting input
 
-    std::string str = argv[1];
+    const std::string str = argv[1];
     std::string FormattedStr;
 
     for (size_t i = 0, const sz = str.size(); i < sz; ++i)
@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
 
     const int key = std::stoi(argv[3]);
 
-    if (mode == 'r')
+    if (mode == 'r' || mode == 'R')
     {
         RolDecrypt(FormattedStr, key);
     }
