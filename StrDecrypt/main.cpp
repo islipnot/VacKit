@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 
     const char mode = argv[2][0];
 
-    if ((mode != 'r' || mode != 'R') && (mode != 'x' || mode != 'X'))
+    if (mode != 'r' && mode != 'R' && mode != 'x' && mode != 'X')
     {
         std::cout << "ERROR: unrecognized decryption mode\n";
         PrintArgs();

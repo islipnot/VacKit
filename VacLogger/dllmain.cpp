@@ -56,18 +56,20 @@ static void ThreadEntry()
 
     }
 
-    // Kernel32.dll
+    // kernel32.dll
 
     {
-        constexpr wchar_t k32[] = L"Kernel32.dll";
+        constexpr wchar_t k32[] = L"kernel32.dll";
 
-        CreateHookApi(k32, "OpenFileMappingW", hkOpenFileMappingW, &oOpenFileMappingW);
+        CreateHookApi(k32, "OpenFileMappingW",    hkOpenFileMappingW,    &oOpenFileMappingW);
 
-        CreateHookApi(k32, "CreateFileW", hkCreateFileW, &oCreateFileW);
+        CreateHookApi(k32, "CreateFileW",         hkCreateFileW,         &oCreateFileW);
 
-        CreateHookApi(k32, "ReadProcessMemory", hkReadProcessMemory, &oReadProcessMemory);
+        CreateHookApi(k32, "ReadProcessMemory",   hkReadProcessMemory,   &oReadProcessMemory);
 
         CreateHookApi(k32, "WideCharToMultiByte", hkWideCharToMultiByte, &oWideCharToMultiByte);
+
+        CreateHookApi(k32, "ReadFile",            hkReadFile,            &oReadFile);
 
         //CreateHookApi(k32, "GetFileInformationByHandle", hkGetFileInformationByHandle, &oGetFileInformationByHandle);
     }

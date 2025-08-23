@@ -8,7 +8,7 @@ typedef void(__thiscall* IceDecrypt)(void* ik, BYTE* ctext, BYTE* ptext);
 
 static IceDecrypt oIceDecrypt[MODULE_COUNT] {};
 
-// Kernel32.dll
+// kernel32.dll
 
 HANDLE WINAPI hkOpenFileMappingW(DWORD dwDesiredAccess, BOOL bInheritHandle, LPCWSTR lpName)
 {
@@ -82,6 +82,20 @@ BOOL WINAPI hkGetFileInformationByHandle(HANDLE hFile, LPBY_HANDLE_FILE_INFORMAT
     return oGetFileInformationByHandle(hFile, lpFileInformation);
 }
 
+BOOL WINAPI hkReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlappyed)
+{
+    wchar_t path[MAX_PATH];
+
+    if (hFile != INVALID_HANDLE_VALUE && GetFinalPathNameByHandle(hFile, path, MAX_PATH, FILE_NAME_NORMALIZED))
+    {
+        wchar_t msg[320];
+        swprintf_s(msg, 320, L"ReadFile: FileName[%s], lpBuffer[%p]", path, lpBuffer);
+        LogMsgW(msg);
+    }
+
+    return oReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlappyed);
+}
+
 // VAC module hooks
 
 void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
@@ -136,6 +150,11 @@ void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
 
     if (count == 20) // 160 / 8 == 20
     {
+        /*if (i == SHELLCODE_MODULE_INDEX)
+        {
+            DumpShellData(ptext - 152);
+        }*/
+
         if (i != ANTI_DBG_MODULE_INDEX) // this module has no import decryption routine (only SharedUserData and PEB checks)
         {
             status = DECRYPTING_IMPORTS;
@@ -182,7 +201,7 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
             LogMsgA(msg);
         }
     }
-
+    
     // Logging the call & dumping params
     
     char CallMsg[35];

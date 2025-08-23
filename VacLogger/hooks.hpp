@@ -19,7 +19,7 @@ typedef int(__stdcall* runfunc)(int, DWORD*, UINT, char*, size_t*);
 //// FUNCTION POINTERS
 //
 
-// Kernel32.dll
+// kernel32.dll
 
 inline HANDLE(WINAPI* oOpenFileMappingW)(DWORD, BOOL, LPCWSTR);
 
@@ -31,11 +31,13 @@ inline int(WINAPI* oWideCharToMultiByte)(UINT, DWORD, LPCWCH, int, LPSTR, int, L
 
 inline BOOL(WINAPI* oGetFileInformationByHandle)(HANDLE, LPBY_HANDLE_FILE_INFORMATION);
 
+inline BOOL(WINAPI* oReadFile)(HANDLE, LPVOID, DWORD, LPDWORD, LPOVERLAPPED);
+
 //
 //// HOOKS
 //
 
-// Kernel32.dll
+// kernel32.dll
 
 HANDLE WINAPI hkOpenFileMappingW(DWORD dwDesiredAccess, BOOL bInheritHandle, LPCWSTR lpName);
 
@@ -46,6 +48,8 @@ BOOL WINAPI hkReadProcessMemory(HANDLE hProcess, LPCVOID lpBaseAddress, LPVOID l
 int WINAPI hkWideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr, int cchWideChar, LPSTR lpMultiByteStr, int cbMultiByte, LPCCH lpDefaultChar, LPBOOL lpUsedDefaultChar);
 
 BOOL WINAPI hkGetFileInformationByHandle(HANDLE hFile, LPBY_HANDLE_FILE_INFORMATION lpFileInformation);
+
+BOOL WINAPI hkReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlappyed);
 
 // steamservice.dll
 

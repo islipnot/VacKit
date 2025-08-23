@@ -4,13 +4,15 @@
 //// MACROS
 //
 
-#define MODULE_COUNT          14
+#define MODULE_COUNT           14
 
-#define DECRYPTING_PARAMS     0
+#define DECRYPTING_PARAMS      0
 
-#define DECRYPTING_IMPORTS    1
+#define DECRYPTING_IMPORTS     1
 
-#define ANTI_DBG_MODULE_INDEX 7 // this doesnt have an import decryption routine
+#define SHELLCODE_MODULE_INDEX 6
+
+#define ANTI_DBG_MODULE_INDEX  7 // this doesnt have an import decryption routine
 
 //
 //// FORWARD DECLARATIONS
