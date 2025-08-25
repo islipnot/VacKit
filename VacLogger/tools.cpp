@@ -25,10 +25,10 @@ static BYTE* FindPatternInternal(BYTE* base, SIZE_T ScanSize, PCSTR pattern, int
 
             PtrnIndex += 2;
         }
-
+        
         if (found) return base;
     }
-
+    
     return nullptr;
 }
 
@@ -133,6 +133,8 @@ static std::mutex LogMutex;
 
 void LogMsgW(const std::wstring& msg, void* RetAddr)
 {
+    if (!msg.size()) return;
+
     const std::lock_guard<std::mutex> guard(LogMutex);
     std::wofstream log("vLog.txt", std::ios::out | std::ios::app);
 
@@ -154,6 +156,8 @@ void LogMsgW(const std::wstring& msg, void* RetAddr)
 
 void LogMsgA(const std::string& msg, void* RetAddr)
 {
+    if (!msg.size()) return;
+
     const std::lock_guard<std::mutex> guard(LogMutex);
     std::ofstream log("vLog.txt", std::ios::out | std::ios::app);
 

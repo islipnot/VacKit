@@ -10,9 +10,9 @@
 
 #define DECRYPTING_IMPORTS     1
 
-#define SHELLCODE_MODULE_INDEX 6
-
 #define ANTI_DBG_MODULE_INDEX  7 // this doesnt have an import decryption routine
+
+#define SHELLCODE_MODULE_INDEX 5
 
 //
 //// FORWARD DECLARATIONS

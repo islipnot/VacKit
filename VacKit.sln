@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36301.6 d17.14
+VisualStudioVersion = 17.14.36301.6
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VacLogger", "VacLogger\VacLogger.vcxproj", "{3761D1D2-1BC8-4923-B61B-C2CBD7372AA9}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StrDecrypt", "StrDecrypt\StrDecrypt.vcxproj", "{C1D9EF7A-6D22-4FB2-B4E6-8204FB226932}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IceDecrypt", "IceDecrypt\IceDecrypt.vcxproj", "{CB8AA304-48EC-4C02-85F8-E9917C7C413C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SigTester", "SigTester\SigTester.vcxproj", "{34967EF6-97AE-4D03-8868-216FDF86543D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +43,14 @@ Global
 		{CB8AA304-48EC-4C02-85F8-E9917C7C413C}.Release|x64.Build.0 = Release|x64
 		{CB8AA304-48EC-4C02-85F8-E9917C7C413C}.Release|x86.ActiveCfg = Release|Win32
 		{CB8AA304-48EC-4C02-85F8-E9917C7C413C}.Release|x86.Build.0 = Release|Win32
+		{34967EF6-97AE-4D03-8868-216FDF86543D}.Debug|x64.ActiveCfg = Debug|x64
+		{34967EF6-97AE-4D03-8868-216FDF86543D}.Debug|x64.Build.0 = Debug|x64
+		{34967EF6-97AE-4D03-8868-216FDF86543D}.Debug|x86.ActiveCfg = Debug|Win32
+		{34967EF6-97AE-4D03-8868-216FDF86543D}.Debug|x86.Build.0 = Debug|Win32
+		{34967EF6-97AE-4D03-8868-216FDF86543D}.Release|x64.ActiveCfg = Release|x64
+		{34967EF6-97AE-4D03-8868-216FDF86543D}.Release|x64.Build.0 = Release|x64
+		{34967EF6-97AE-4D03-8868-216FDF86543D}.Release|x86.ActiveCfg = Release|Win32
+		{34967EF6-97AE-4D03-8868-216FDF86543D}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

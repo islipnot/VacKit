@@ -32,6 +32,7 @@ int main()
 
 	std::ofstream result("result.txt", std::ios::out | std::ios::binary | std::ios::trunc);
 	result.write((const char*)data, sizeof(data));
+    result.close();
 
 	std::cout << "Decryption complete. Check result.txt!\n";
 	return 0;

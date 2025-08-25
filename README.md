@@ -1,25 +1,33 @@
 # VacLogger
 
-If you found this off unknowncheats, I'd appreciate telling me about any bugs in dms!
-
-This VAC logger must be injected into `steam.exe` (steam must have admin) before any game is launched. It will log every call 
-to `ReadProcessMemory`, `CreateFileW`, `OpenFileMappingW`, and `WideCharToMultiByte`. More importantly though, it hooks steam's 
-call to `_runfunc@20`. When runfunc is called, it will use pattern scanning to detect which module it is in. It will then hook 
-into the modules ICE decryption routine, where it will dump ONLY the decrypted module parameters, ignoring import decryption. 
-The `IceKey::decrypt` hook tracks the routine progress allowing for automatic seperation and labeling of output, and like I 
-already said, allowing for it to ignore import decryption. It should also be noted that the call to runfunc is logged on its 
-own along with the other API logs, and logs which module the function belongs to. I also made it dump the encrypted parameters 
-because a few bytes technically have a use, though it might aswell be ignored.
+This VAC logger must be injected into `steam.exe` (steam must have admin) before any game is launched. It will log various WinApi
+functions used in VAC modules, more importantly though, it hooks steam's call to `_runfunc@20`. When runfunc is called, it will 
+use pattern scanning to detect which module it is in. It will then hook into the modules ICE decryption routine, where it will
+dump ONLY the decrypted module parameters, ignoring import decryption. The `IceKey::decrypt` hook tracks the routine progress 
+allowing for automatic seperation and labeling of output, and like I already said, allowing for it to ignore import decryption. 
+It should also be noted that the call to runfunc is logged on its own along with the other API logs, and logs which module the 
+function belongs to. The encrypted parameters are also dumped because there are technically a few bytes that aren't encrypted 
+and are used, though it's not very relevant.
 
 This is of course all based on my personal dumps of the anti-cheat, and if the pattern scanning fails for you, you simply need 
 to update the patterns. First off, in hooks.cpp, make sure the pattern used to locate the runfunc call works. Next, check tools.cpp 
-and make sure all 12 of the patterns in `ModuleIndexFromPtr` are good. If these aren't working for you simply get a unique pattern 
+and make sure all of the patterns in `ModuleIndexFromPtr` are good. If these aren't working for you simply get a unique pattern 
 from your own dumps that can be used to identify the modules. The way to tell if the module signatures are outdated is by looking at 
 `vLog.txt`, and if the runfunc log doesn't have a number next to it indicating which module it is, that means it failed to identify it.
 
 API/runfunc call logs are logged in `vLog.txt`, decrypted parameters are logged in `pdLog.txt`, and encrypted parameters are logged 
 in `pLog.txt`. All of these log files are in the steam directory. It should also be noted you can adds your own API logs very easily 
 by just adding a new `CreateHookApi` call in `ThreadEntry`, which obviously requires that you write a hook in hooks.cpp.
+
+# SigTester
+
+This allows you to easily create unique module signatures, which can be used for self identification within the hooks in the 
+VAC logger. You must place every VAC dll in the directory of the compiled binary, and they must be named VAC-1.dll - VAC-14.dll, 
+or however many dlls you want to scan. The number of dlls should match the number of signatures. 
+
+A really good way to get unique signatures is copying the bytes of encrypted strings, which are entirely unique to the modules 
+they're present in. Another good way is finding register based calls to encrypted imports, because most modules have at least a 
+couple functions that only they call.
 
 # StrDecrypt
 

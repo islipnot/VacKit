@@ -107,6 +107,13 @@ void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
     const int i = ModuleIndexFromPtr(_ReturnAddress());
     oIceDecrypt[i](ik, ctext, ptext);
 
+    static bool hit = false;
+    if (!hit && i == SHELLCODE_MODULE_INDEX)
+    {
+        hit = true;
+        __debugbreak();
+    }
+
     // Checking the progress of the decryption routine (so it knows when to seperate the dumps)
 
     static std::mutex IceMutex;
@@ -150,11 +157,6 @@ void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
 
     if (count == 20) // 160 / 8 == 20
     {
-        /*if (i == SHELLCODE_MODULE_INDEX)
-        {
-            DumpShellData(ptext - 152);
-        }*/
-
         if (i != ANTI_DBG_MODULE_INDEX) // this module has no import decryption routine (only SharedUserData and PEB checks)
         {
             status = DECRYPTING_IMPORTS;
@@ -173,13 +175,15 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
     static std::mutex LogMutex;
     const std::lock_guard<std::mutex> guard(LogMutex);
 
-    // Hooking IceDecrypt
+    // Hooking/patching module
 
     if (i != -1 && !oIceDecrypt[i])
     {
-        BYTE* pIceDecrypt = FindPattern(nullptr, "0B D8 0F B6 42 ? 0B C8 0F B6 42 ? C1 E1 ? 0B C8 0F B6 42 ? C1 E1 ? 56", 25, -43, oRunfunc);
+        // Hooking IceKey::decrypt
 
-        if (pIceDecrypt)
+        BYTE* pTarget = FindPattern(nullptr, "0B D8 0F B6 42 ? 0B C8 0F B6 42 ? C1 E1 ? 0B C8 0F B6 42 ? C1 E1 ? 56", 25, -43, oRunfunc);
+
+        if (pTarget)
         {
             BYTE wrapper[] =
             {
@@ -188,11 +192,11 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
                 0xB8, 0,0,0,0,          // mov eax, IceKey::decrypt+5
                 0xFF, 0xE0              // jmp eax
             };
-            
-            oIceDecrypt[i] = CreateWrappedHook<IceDecrypt>(wrapper, sizeof(wrapper), 6, hkIceDecrypt, (DWORD)(pIceDecrypt + 5), (DWORD)pIceDecrypt);
-            MH_EnableHook(pIceDecrypt);
 
-            LogMsgA("Hooked IceKey::decrypt", pIceDecrypt);
+            oIceDecrypt[i] = CreateWrappedHook<IceDecrypt>(wrapper, sizeof(wrapper), 6, hkIceDecrypt, (DWORD)(pTarget + 5), (DWORD)pTarget);
+            MH_EnableHook(pTarget);
+
+            LogMsgA("Hooked IceKey::decrypt", pTarget);
         }
         else
         {
@@ -200,6 +204,25 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
             msg += std::to_string(i);
             LogMsgA(msg);
         }
+
+        // Setting a breakpoint on shellcode call
+
+        /*if (i == SHELLCODE_MODULE_INDEX)
+        {
+            pTarget = FindPattern(nullptr, "A8 20 74 18 8B 47 04 56 57 68 ?? ?? ?? ?? 03 C3 FF D0 83 C4 0C 83 4E 14 20", 25, 16, oRunfunc);
+
+            if (pTarget)
+            {
+                DWORD OldProtect;
+                VirtualProtect(pTarget, 2, PAGE_EXECUTE_READWRITE, &OldProtect);
+
+                constexpr BYTE bp_bytes[] = { 0xCD, 0x03 };
+                memcpy(pTarget, bp_bytes, sizeof(bp_bytes));
+
+                VirtualProtect(pTarget, 2, OldProtect, &OldProtect);
+            }
+            else LogMsgA("ERROR: failed to locate shellcode call");
+        }*/
     }
     
     // Logging the call & dumping params
