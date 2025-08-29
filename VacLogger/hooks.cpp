@@ -106,14 +106,7 @@ void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
 
     const int i = ModuleIndexFromPtr(_ReturnAddress());
     oIceDecrypt[i](ik, ctext, ptext);
-
-    static bool hit = false;
-    if (!hit && i == SHELLCODE_MODULE_INDEX)
-    {
-        hit = true;
-        __debugbreak();
-    }
-
+    
     // Checking the progress of the decryption routine (so it knows when to seperate the dumps)
 
     static std::mutex IceMutex;
@@ -204,25 +197,6 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
             msg += std::to_string(i);
             LogMsgA(msg);
         }
-
-        // Setting a breakpoint on shellcode call
-
-        /*if (i == SHELLCODE_MODULE_INDEX)
-        {
-            pTarget = FindPattern(nullptr, "A8 20 74 18 8B 47 04 56 57 68 ?? ?? ?? ?? 03 C3 FF D0 83 C4 0C 83 4E 14 20", 25, 16, oRunfunc);
-
-            if (pTarget)
-            {
-                DWORD OldProtect;
-                VirtualProtect(pTarget, 2, PAGE_EXECUTE_READWRITE, &OldProtect);
-
-                constexpr BYTE bp_bytes[] = { 0xCD, 0x03 };
-                memcpy(pTarget, bp_bytes, sizeof(bp_bytes));
-
-                VirtualProtect(pTarget, 2, OldProtect, &OldProtect);
-            }
-            else LogMsgA("ERROR: failed to locate shellcode call");
-        }*/
     }
     
     // Logging the call & dumping params
@@ -253,6 +227,6 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
     else sprintf_s(CallMsg, sizeof(CallMsg), "runfunc: %p", oRunfunc);
 
     LogMsgA(CallMsg);
-
+    
 	return oRunfunc(a1, a2, a3, a4, a5);
 }
