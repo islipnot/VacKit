@@ -106,6 +106,9 @@ void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
 
     const int i = ModuleIndexFromPtr(_ReturnAddress());
     oIceDecrypt[i](ik, ctext, ptext);
+
+    if (i == ANTI_DBG_MODULE_INDEX)
+        return;
     
     // Checking the progress of the decryption routine (so it knows when to seperate the dumps)
 
@@ -116,7 +119,7 @@ void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
     static int  DecryptedBytes  [MODULE_COUNT] {};
 
     bool& status = DecryptionStatus[i];
-    int&  count  = DecryptedBytes[i];
+    int& count = DecryptedBytes[i];
 
     ++count;
 
@@ -150,11 +153,7 @@ void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
 
     if (count == 20) // 160 / 8 == 20
     {
-        if (i != ANTI_DBG_MODULE_INDEX) // this module has no import decryption routine (only SharedUserData and PEB checks)
-        {
-            status = DECRYPTING_IMPORTS;
-        }
-
+        status = DECRYPTING_IMPORTS;
         count = 0;
     }
 }
@@ -199,7 +198,7 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
         }
     }
     
-    // Logging the call & dumping params
+    // Logging the call & dumping paramswww.unknowncheats.me/forum/counter-strike-2-a/705782-vac-modules-reversal-2025-a.html
     
     char CallMsg[35];
 
@@ -212,14 +211,12 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
         std::ofstream ParamDump("pLog.txt", std::ios::out | std::ios::app);
         if (ParamDump.is_open())
         {
-            char DumpMsg[60];
-            sprintf_s(DumpMsg, sizeof(DumpMsg), "VAC-%d.dll!_runfunc@20 param a2[0-176]:\n", i + 1);
+            char DumpMsg[30];
+            sprintf_s(DumpMsg, sizeof(DumpMsg), "VAC-%d.dll a2[0-176]:\n", i + 1);
 
             ParamDump << DumpMsg;
             ParamDump.write(reinterpret_cast<const char*>(a2), 176);
-
-            sprintf_s(DumpMsg, sizeof(DumpMsg), "\n** END OF: VAC-%d.dll!_runfunc@20 param a2[0-176]**\n\n", i + 1);
-            ParamDump << DumpMsg;
+            ParamDump << "\n\n";
 
             ParamDump.close();
         }

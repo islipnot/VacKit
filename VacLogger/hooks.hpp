@@ -4,15 +4,6 @@
 //// TYPES
 //
 
-struct VAC_MAPPING_DATA
-{
-	bool DllMainRan;
-	char* ModuleBase;
-	IMAGE_NT_HEADERS32* NtHeaders;
-	UINT LoadedModuleCount;
-	void** ModuleBaseList;
-};
-
 typedef int(__stdcall* runfunc)(int, DWORD*, UINT, char*, size_t*);
 
 //
