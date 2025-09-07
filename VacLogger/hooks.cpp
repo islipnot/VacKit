@@ -106,17 +106,14 @@ void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
 
     const int i = ModuleIndexFromPtr(_ReturnAddress());
     oIceDecrypt[i](ik, ctext, ptext);
-
-    if (i == ANTI_DBG_MODULE_INDEX)
-        return;
     
     // Checking the progress of the decryption routine (so it knows when to seperate the dumps)
 
     static std::mutex IceMutex;
     const std::lock_guard<std::mutex> guard(IceMutex);
     
-    static bool DecryptionStatus[MODULE_COUNT] {};
-    static int  DecryptedBytes  [MODULE_COUNT] {};
+    static bool DecryptionStatus[MODULE_COUNT]{};
+    static int DecryptedBytes[MODULE_COUNT]{};
 
     bool& status = DecryptionStatus[i];
     int& count = DecryptedBytes[i];
@@ -151,7 +148,7 @@ void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
     file.write(reinterpret_cast<const char*>(ptext), 8);
     file.close();
 
-    if (count == 20) // 160 / 8 == 20
+    if (count == 20 && i != ANTI_DBG_MODULE_INDEX) // 160 / 8 == 20
     {
         status = DECRYPTING_IMPORTS;
         count = 0;
@@ -167,15 +164,19 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
     static std::mutex LogMutex;
     const std::lock_guard<std::mutex> guard(LogMutex);
 
-    // Hooking/patching module
+    // Hooking ICE decryption
 
-    if (i != -1 && !oIceDecrypt[i])
+    if (i != -1)
     {
-        // Hooking IceKey::decrypt
+        // Checked every time incase modules are reloaded
 
         BYTE* pTarget = FindPattern(nullptr, "0B D8 0F B6 42 ? 0B C8 0F B6 42 ? C1 E1 ? 0B C8 0F B6 42 ? C1 E1 ? 56", 25, -43, oRunfunc);
 
-        if (pTarget)
+        if (!pTarget)
+        {
+            LogMsgA(std::string("ERROR: failed to locate IceKey::decrypt in module ") + std::to_string(i));
+        }
+        else if (*pTarget != 0xE8)
         {
             BYTE wrapper[] =
             {
@@ -190,15 +191,9 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
 
             LogMsgA("Hooked IceKey::decrypt", pTarget);
         }
-        else
-        {
-            std::string msg = "ERROR: failed to locate IceKey::decrypt in module ";
-            msg += std::to_string(i);
-            LogMsgA(msg);
-        }
     }
     
-    // Logging the call & dumping paramswww.unknowncheats.me/forum/counter-strike-2-a/705782-vac-modules-reversal-2025-a.html
+    // Logging the call & dumping params
     
     char CallMsg[35];
 
@@ -212,7 +207,7 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
         if (ParamDump.is_open())
         {
             char DumpMsg[30];
-            sprintf_s(DumpMsg, sizeof(DumpMsg), "VAC-%d.dll a2[0-176]:\n", i + 1);
+            sprintf_s(DumpMsg, sizeof(DumpMsg), "VAC-%d a2[0-176]:\n", i + 1);
 
             ParamDump << DumpMsg;
             ParamDump.write(reinterpret_cast<const char*>(a2), 176);

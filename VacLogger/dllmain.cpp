@@ -70,8 +70,6 @@ static void ThreadEntry()
         CreateHookApi(k32, "WideCharToMultiByte", hkWideCharToMultiByte, &oWideCharToMultiByte);
 
         CreateHookApi(k32, "ReadFile",            hkReadFile,            &oReadFile);
-
-        //CreateHookApi(k32, "GetFileInformationByHandle", hkGetFileInformationByHandle, &oGetFileInformationByHandle);
     }
     
     MH_EnableHook(MH_ALL_HOOKS);
