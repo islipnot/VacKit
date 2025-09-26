@@ -14,11 +14,9 @@ HANDLE WINAPI hkOpenFileMappingW(DWORD dwDesiredAccess, BOOL bInheritHandle, LPC
 {
     if (lpName && lstrlenW(lpName))
     {
-        std::wstring msg = L"OpenFileMappingW: ";
-        msg += lpName;
-        LogMsgW(msg);
+        logs::basic(_ReturnAddress(), L"OpenFileMappingW: {}", lpName);
     }
-    else LogMsgA("OpenFileMappingW: nullptr or empty string passed");
+    else logs::basic(_ReturnAddress(), "OpenFileMappingW: nullptr or empty string passed");
 
     return oOpenFileMappingW(dwDesiredAccess, bInheritHandle, lpName);
 }
@@ -27,11 +25,9 @@ HANDLE WINAPI hkCreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwS
 {
     if (lpFileName && lstrlenW(lpFileName))
     {
-        std::wstring msg = L"CreateFileW: ";
-        msg += lpFileName;
-        LogMsgW(msg);
+        logs::basic(_ReturnAddress(), L"CreateFileW: {}", lpFileName);
     }
-    else LogMsgA("CreateFileW: nullptr or empty string passed");
+    else logs::basic(_ReturnAddress(), "CreateFileW: nullptr or empty string passed");
 
     return oCreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 }
@@ -43,13 +39,9 @@ BOOL WINAPI hkReadProcessMemory(HANDLE hProcess, LPCVOID lpBaseAddress, LPVOID l
 
     if (QueryFullProcessImageName(hProcess, 0, path, &sz))
     {
-        wchar_t msg[512];
-        msg[511] = 0;
-
-        wprintf_s(msg, sizeof(msg), L"ReadProcessMemory: hProcess[%s], lpBaseAddress[%p], nSize[%d]", path, lpBaseAddress, nSize);
-        LogMsgW(msg);
+        logs::basic(_ReturnAddress(), L"ReadProcessMemory: hProcess[{}], lpBaseAddress[{:p}], nSize[{:#x}]", path, lpBaseAddress, nSize);
     }
-    else LogMsgA("ReadProcessMemory: invalid handle passed");
+    else logs::basic(_ReturnAddress(), "ReadProcessMemory: invalid handle passed");
 
     return oReadProcessMemory(hProcess, lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesRead);
 }
@@ -58,11 +50,9 @@ int WINAPI hkWideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideChar
 {
     if (lpWideCharStr && lstrlenW(lpWideCharStr))
     {
-        std::wstring msg = L"WideCharToMultiByte: ";
-        msg += lpWideCharStr;
-        LogMsgW(msg);
+        logs::basic(_ReturnAddress(), L"WideCharToMultiByte: {}", lpWideCharStr);
     }
-    else LogMsgA("WideCharToMultiByte: nullptr or empty string passed");
+    else logs::basic(_ReturnAddress(), "WideCharToMultiByte: nullptr or empty string passed");
 
     return oWideCharToMultiByte(CodePage, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr, cbMultiByte, lpDefaultChar, lpUsedDefaultChar);
 }
@@ -73,11 +63,9 @@ BOOL WINAPI hkGetFileInformationByHandle(HANDLE hFile, LPBY_HANDLE_FILE_INFORMAT
 
     if (GetFinalPathNameByHandleW(hFile, path, MAX_PATH, FILE_NAME_NORMALIZED))
     {
-        std::wstring msg = L"GetFileInformationByHandle: ";
-        msg += path;
-        LogMsgW(msg);
+        logs::basic(_ReturnAddress(), L"GetFileInformationByHandle: {}", path);
     }
-    else LogMsgA("GetFileInformationByHandle: invalid handle passed");
+    else logs::basic(_ReturnAddress(), "GetFileInformationByHandle: invalid handle passed");
 
     return oGetFileInformationByHandle(hFile, lpFileInformation);
 }
@@ -88,9 +76,7 @@ BOOL WINAPI hkReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead
 
     if (hFile != INVALID_HANDLE_VALUE && GetFinalPathNameByHandle(hFile, path, MAX_PATH, FILE_NAME_NORMALIZED))
     {
-        wchar_t msg[320];
-        swprintf_s(msg, 320, L"ReadFile: FileName[%s], lpBuffer[%p]", path, lpBuffer);
-        LogMsgW(msg);
+        logs::basic(_ReturnAddress(), L"ReadFile: FileName[{}], lpBuffer[{:p}]", path, lpBuffer);
     }
 
     return oReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlappyed);
@@ -133,18 +119,12 @@ void __fastcall hkIceDecrypt(void* ik, int edx, BYTE* ctext, BYTE* ptext)
 
     // Dumping decrypted bytes
 
-    std::ofstream file("pdLog.txt", std::ios::out | std::ios::app | std::ios::ate);
-
     if (count == 1)
     {
-        if (static_cast<size_t>(file.tellp()) != 0)
-        {
-            file << "\n\n";
-        }
-
-        file << "**VAC" << std::to_string(i + 1) << " DUMP START**\n\n";
+        logs::decrypted_params("*VAC{} START*\n", i + 1);
     }
 
+    std::ofstream file("pdLog.txt", std::ios::out | std::ios::app | std::ios::ate);
     file.write(reinterpret_cast<const char*>(ptext), 8);
     file.close();
 
@@ -174,7 +154,7 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
 
         if (!pTarget)
         {
-            LogMsgA(std::string("ERROR: failed to locate IceKey::decrypt in module ") + std::to_string(i));
+            logs::basic(nullptr, "ERROR: failed to locate IceKey::decrypt in module {}", i);
         }
         else if (*pTarget != 0xE8)
         {
@@ -189,36 +169,41 @@ int __stdcall hkRunfunc(runfunc oRunfunc, int a1, DWORD* a2, UINT a3, char* a4, 
             oIceDecrypt[i] = CreateWrappedHook<IceDecrypt>(wrapper, sizeof(wrapper), 6, hkIceDecrypt, (DWORD)(pTarget + 5), (DWORD)pTarget);
             MH_EnableHook(pTarget);
 
-            LogMsgA("Hooked IceKey::decrypt", pTarget);
+            logs::basic(nullptr, "[{:p}] Hooked IceKey::decrypt", static_cast<void*>(pTarget));
         }
     }
     
     // Logging the call & dumping params
-    
-    char CallMsg[35];
+
+    std::ofstream ParamDump("pLog.txt", std::ios::out | std::ios::app);
 
     if (i != -1)
     {
-        sprintf_s(CallMsg, sizeof(CallMsg), "runfunc: VAC-%d, %p", i + 1, oRunfunc);
+        logs::basic(nullptr, "runfunc: VAC{} ({:p})", i + 1, static_cast<void*>(oRunfunc));
 
         // Dumping parameters
 
-        std::ofstream ParamDump("pLog.txt", std::ios::out | std::ios::app);
         if (ParamDump.is_open())
         {
-            char DumpMsg[30];
-            sprintf_s(DumpMsg, sizeof(DumpMsg), "VAC-%d a2[0-176]:\n", i + 1);
-
-            ParamDump << DumpMsg;
-            ParamDump.write(reinterpret_cast<const char*>(a2), 176);
-            ParamDump << "\n\n";
-
-            ParamDump.close();
+            logs::params("*VAC{} a2[0-176]*", i + 1);
         }
     }
-    else sprintf_s(CallMsg, sizeof(CallMsg), "runfunc: %p", oRunfunc);
+    else
+    {
+        logs::basic(nullptr, "runfunc: {:p}", static_cast<void*>(oRunfunc));
 
-    LogMsgA(CallMsg);
+        if (ParamDump.is_open())
+        {
+            logs::params("*UNKNOWN MODULE a2[0-176]*");
+        }
+    }
+
+    if (ParamDump.is_open())
+    {
+        ParamDump.write(reinterpret_cast<const char*>(a2), 176);
+        ParamDump << "\n\n";
+        ParamDump.close();
+    }
     
 	return oRunfunc(a1, a2, a3, a4, a5);
 }

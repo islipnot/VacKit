@@ -22,13 +22,83 @@ BYTE* FindPattern(PCWSTR ModuleName, PCSTR pattern, int PatternSize, int offset,
 
 int ModuleIndexFromPtr(void* ScanRegion);
 
-void LogMsgW(const std::wstring& msg, void* RetAddr = _ReturnAddress());
-
-void LogMsgA(const std::string& msg, void* RetAddr = _ReturnAddress());
-
 //
-//// TEMPLATES
+//// HELPERS
 //
+
+namespace logs
+{
+	static std::mutex LogMutex;
+
+	template <typename... Args> void params(std::format_string<Args...> fmt, Args&&... args)
+	{
+		const std::lock_guard<std::mutex> guard(LogMutex);
+
+		std::ofstream file("pLog.txt", std::ios::out | std::ios::app);
+		if (file.is_open())
+		{
+			file << std::format(fmt, std::forward<Args>(args)...) << '\n';
+			file.close();
+		}
+	}
+
+	template <typename... Args> void decrypted_params(std::format_string<Args...> fmt, Args&&... args)
+	{
+		const std::lock_guard<std::mutex> guard(LogMutex);
+
+		std::ofstream file("pdLog.txt", std::ios::out | std::ios::app);
+		if (file.is_open())
+		{
+			if (file.tellp() != 0)
+			{
+				file << "\n\n";
+			}
+
+			file << std::format(fmt, std::forward<Args>(args)...) << '\n';
+			file.close();
+		}
+	}
+
+	template <typename... Args> void basic(void* RetAddr, std::format_string<Args...> fmt, Args&&... args)
+	{
+		const std::lock_guard<std::mutex> guard(LogMutex);
+
+		std::ofstream file("vLog.txt", std::ios::out | std::ios::app);
+		if (file.is_open())
+		{
+			if (RetAddr)
+			{
+				file << "[0x" << std::hex << RetAddr << "] " << std::format(fmt, std::forward<Args>(args)...) << '\n';
+			}
+			else
+			{
+				file << std::format(fmt, std::forward<Args>(args)...) << '\n';
+			}
+
+			file.close();
+		}
+	}
+
+	template <typename... Args> void basic(void* RetAddr, std::wformat_string<Args...> fmt, Args&&... args)
+	{
+		const std::lock_guard<std::mutex> guard(LogMutex);
+
+		std::wofstream file("vLog.txt", std::ios::out | std::ios::app);
+		if (file.is_open())
+		{
+			if (RetAddr)
+			{
+				file << "[0x" << std::hex << RetAddr << "] " << std::format(fmt, std::forward<Args>(args)...) << L'\n';
+			}
+			else
+			{
+				file << std::format(fmt, std::forward<Args>(args)...) << L'\n';
+			}
+
+			file.close();
+		}
+	}
+}
 
 template <typename t> auto CreateWrappedHook(BYTE* wrapper, SIZE_T WrapperSz, int RetIndex, void* pHook, DWORD_PTR WrapperRetAddr, DWORD_PTR pHookInsertion) -> t
 {

@@ -6,10 +6,16 @@
 
 static void ThreadEntry()
 {
+    // Clearing logs
+
+    std::ofstream("vLog.txt",  std::ios::trunc).close();
+    std::ofstream("pLog.txt",  std::ios::trunc).close();
+    std::ofstream("pdLog.txt", std::ios::trunc).close();
+
     // steamservice.dll
 
     {
-        BYTE* pRunfuncCall = FindPattern(L"steamservice.dll", "FF D0 89 43 ? C7 45 ? ? ? ? ? EB ? 8B 45 ? 89 45 ? 8B 75 ? B9 ? ? ? ? 8B 36 8D 7D ? F3 A5 C7 45 ? ? ? ? ? 8B 45 ? C3 8B 65 ? 8B 5D ? 8B 43 ? 8B 7D", 57, 0);
+        BYTE* pRunfuncCall = FindPattern(L"steamservice.dll", "89 43 ? C7 45 ? ? ? ? ? EB ? 8B 45 ? 89 45 ? 8B 75 ? B9 ? ? ? ? 8B 36 8D 7D ? F3 A5 C7 45 ? ? ? ? ? 8B 45 ? C3 8B 65 ? 8B 5D ? 8B 43 ? 8B 7D", 55, -2);
 
         if (pRunfuncCall)
         {
@@ -43,16 +49,16 @@ static void ThreadEntry()
 
                 if (MH_CreateHook(pRunfuncCall, pWrapper, nullptr) == MH_OK)
                 {
-                    LogMsgA("Hooked runfunc call", pRunfuncCall);
+                    logs::basic(pRunfuncCall, "Hooked runfunc call");
                 }
                 else
                 {
-                    LogMsgA("ERROR: failed to hook runfunc call", pRunfuncCall);
+                    logs::basic(pRunfuncCall, "ERROR: failed to hook runfunc call");
                     VirtualFree(pWrapper, 0, MEM_RELEASE);
                 }
             }
         }
-        else LogMsgA("ERROR: failed to locate runfunc call via pattern scanning");
+        else logs::basic(nullptr, "ERROR: failed to locate runfunc call");
 
     }
 

@@ -13,7 +13,10 @@
 #include <fstream>
 #include <string>
 #include <string_view>
+#include <unordered_map>
+#include <format>
 
 #include "MinHook/MinHook.h"
+#include "crc.h"
 
 static_assert(sizeof(void*) == 4, "VacLogger must compile for x86");
