@@ -6,11 +6,7 @@ static uint32_t CalculateCrc(const std::string& FileName)
 {
     // Reading file
 
-#ifdef _DEBUG
-    std::ifstream file("C:\\Users\\john smith\\source\\repos\\VacKit\\bin\\x64\\" + FileName, std::ios::in | std::ios::binary | std::ios::ate);
-#else
     std::ifstream file(FileName, std::ios::in | std::ios::binary | std::ios::ate);
-#endif
     if (file.fail())
     {
         std::cerr << "WARNING: failed to open " << FileName << '\n';
@@ -76,7 +72,7 @@ static void CalculateHashes()
         if (CrcHash)
         {
             std::cout << FileName << " CRC: 0x" << std::hex << std::uppercase << CrcHash << '\n';
-            CrcLog << FileName << ':' << CrcHash << '\n';
+            CrcLog << CrcHash << '\n';
         }
     }
 }
@@ -84,22 +80,36 @@ static void CalculateHashes()
 static void CompareHashes()
 {
     std::string line;
+    std::vector<uint32_t> ExpectedHashes;
 
     while (std::getline(CrcLog, line) && !line.empty())
     {
-        const size_t seperator = line.find(':');
-        const uint32_t ExpectedCrc = static_cast<uint32_t>(std::stoul(line.substr(seperator + 1).c_str()));
+        ExpectedHashes.push_back(static_cast<uint32_t>(std::stoul(line)));
+    }
 
-        line.erase(seperator);
-        const uint64_t CrcHash = CalculateCrc(line);
+    for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path()))
+    {
+        // Checking file extension
 
-        if (CrcHash && ExpectedCrc != CrcHash)
+        const std::string filename = entry.path().filename().string();
+
+        if (!filename.ends_with(".dll"))
+            continue;
+
+        // Calculating CRC
+
+        const uint32_t CrcHash = CalculateCrc(filename);
+
+        if (CrcHash)
         {
-            std::cout << line << " CRC MISMATCH (expected/actual): 0x" << std::hex << std::uppercase << ExpectedCrc << " / 0x" << CrcHash << '\n';
-        }
-        else
-        {
-            std::cout << line << " MATCH: 0x" << std::hex << std::uppercase << CrcHash << '\n';
+            if (std::find(ExpectedHashes.begin(), ExpectedHashes.end(), CrcHash) != ExpectedHashes.end())
+            {
+                std::cout << "CRC MATCHED: " << filename << " -> 0x" << std::hex << std::uppercase << CrcHash << '\n';
+            }
+            else
+            {
+                std::cout << "UNKNOWN CRC: " << filename << " -> 0x" << std::hex << std::uppercase << CrcHash << '\n';
+            }
         }
     }
 }
@@ -108,20 +118,14 @@ int main(int argc, char* argv[])
 {
     if (argc > 1 && !_stricmp(argv[1], "c")) // Calculate CRC hashes
     {
-#ifdef _DEBUG
-        CrcLog.open("C:\\Users\\john smith\\source\\repos\\VacKit\\bin\\x64\\crc.txt", std::ios::out | std::ios::trunc);
-#else
         CrcLog.open("crc.txt", std::ios::out | std::ios::trunc);
-#endif
+
         CalculateHashes();
     }
     else
     {
-#ifdef _DEBUG
-        CrcLog.open("C:\\Users\\john smith\\source\\repos\\VacKit\\bin\\x64\\crc.txt", std::ios::in);
-#else
         CrcLog.open("crc.txt", std::ios::in);
-#endif
+
         CompareHashes();
     }
 

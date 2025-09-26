@@ -12,8 +12,6 @@
 
 #define ANTI_DBG_MODULE_INDEX  7 // this doesnt have an import decryption routine
 
-#define SHELLCODE_MODULE_INDEX 5
-
 //
 //// FORWARD DECLARATIONS
 //
@@ -66,6 +64,11 @@ namespace logs
 		std::ofstream file("vLog.txt", std::ios::out | std::ios::app);
 		if (file.is_open())
 		{
+			SYSTEMTIME st;
+			GetLocalTime(&st);
+
+			file << '[' << st.wHour << ':' << st.wMinute << ':' << st.wSecond << "] ";
+
 			if (RetAddr)
 			{
 				file << "[0x" << std::hex << RetAddr << "] " << std::format(fmt, std::forward<Args>(args)...) << '\n';
@@ -86,6 +89,11 @@ namespace logs
 		std::wofstream file("vLog.txt", std::ios::out | std::ios::app);
 		if (file.is_open())
 		{
+			SYSTEMTIME st;
+			GetLocalTime(&st);
+
+			file << '[' << st.wHour << ':' << st.wMinute << ':' << st.wSecond << "] ";
+
 			if (RetAddr)
 			{
 				file << "[0x" << std::hex << RetAddr << "] " << std::format(fmt, std::forward<Args>(args)...) << L'\n';
