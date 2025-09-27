@@ -116,7 +116,7 @@ static void CompareHashes()
 
 int main(int argc, char* argv[])
 {
-    if (argc > 1 && !_stricmp(argv[1], "c")) // Calculate CRC hashes
+    if (argc > 1 && !_stricmp(argv[1], "c"))
     {
         CrcLog.open("crc.txt", std::ios::out | std::ios::trunc);
 
