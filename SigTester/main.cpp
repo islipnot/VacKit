@@ -44,6 +44,12 @@ static uint32_t CalculateCrc(const std::string& FileName)
         }
     }
 
+    if (!found)
+    {
+        delete[] base;
+        return 0;
+    }
+
     // Calculating CRC hash
 
     const uint32_t CrcHash = CRC::Calculate(base + sh->PointerToRawData, sh->SizeOfRawData, CRC::CRC_32());
