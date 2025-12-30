@@ -1,31 +1,26 @@
 #include "pch.hpp"
 
-void PrintArgs()
+static void PrintArgs()
 {
     std::cout << "Argument format: <string> <type> <key>\n";
     std::cout << "Types: r == ROL, x == XOR\n";
     std::cout << "String should be surrounded by quotes for safety\n";
 }
 
-inline void RolDecrypt(std::string& str, int key)
+static __forceinline void RolDecrypt(std::string& str, int key)
 {
-    uint8_t last;
-
     for (char& ch : str)
     {
-        last = static_cast<uint8_t>(ch);
+        const uint8_t last = static_cast<uint8_t>(ch);
         ch = (last << key) | (last >> (8 - key));
     }
 }
 
-inline void XorDecrypt(std::string& str, int key)
+static __forceinline void XorDecrypt(std::string& str, int key)
 {
-    char last;
-
     for (char& ch : str)
     {
-        last = ch;
-        ch = last ^ key;
+        ch ^= key;
     }
 }
 
@@ -36,7 +31,7 @@ int main(int argc, char* argv[])
     if (argc < 4)
     {
         PrintArgs();
-        return 0;
+        return 1;
     }
 
     const char mode = argv[2][0];
@@ -52,7 +47,7 @@ int main(int argc, char* argv[])
     {
         std::cout << "ERROR: invalid key provided\n";
         PrintArgs();
-        return 2;
+        return 1;
     }
 
     // Formatting input
@@ -60,7 +55,7 @@ int main(int argc, char* argv[])
     const std::string str = argv[1];
     std::string FormattedStr;
 
-    for (size_t i = 0, const sz = str.size(); i < sz; ++i)
+    for (size_t i = 0, sz = str.size(); i < sz; ++i)
     {
         char FirstCh = str[i];
 

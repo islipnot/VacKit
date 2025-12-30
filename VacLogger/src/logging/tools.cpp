@@ -95,20 +95,20 @@ int ModuleIndexFromPtr(void* ScanRegion)
         {
             const std::unordered_map<uint32_t, int> CrcMap =
             {
-                { 0x640BDF5E, 1  }, // 1  - NtQuerySystemInformation, volume logging, etc
-                { 0x2AB91C56, 2  }, // 2  - tlhelp process enumeration & NtQuerySystemInformation(SystemHandleInformation)
-                { 0x049CAC88, 3  }, // 3  - PEB rpm's from flagged processes enumerated by previous module
-                { 0x4980C3F8, 4  }, // 4  - MapViewOfFile calls (seems to be unused)
-                { 0x5188EE22, 5  }, // 5  - Module32FirstW calls
-                { 0xC4FF75AE, 6  }, // 6  - Shellcode stuff
-                { 0x5AC08C58, 7  }, // 7  - BCD queries (HKLM\BCD00000000\Objects)
-                { 0xB9F8D642, 8  }, // 8
-                { 0xDC155F41, 9  }, // 9
-                { 0xB382556A, 10 }, // 10 - SetupDiGetClassDevsA
-                { 0xFD9ADA93, 11 }, // 11
-                { 0xDB9E1E56, 12 }, // 12 - cpuid
-                { 0x907C67B4, 13 }, // 13 - QueryServiceConfigW (one routine)
-                { 0xB7076415, 14 }  // 14 - 3 routines & direct wvsprintfW import
+                { 0x56915763, 1  }, // 1  - NtQuerySystemInformation, volume logging, etc (launch module)
+                { 0x842AF523, 2  }, // 2  - 
+                { 0xFDB6A44B, 3  }, // 3  - 
+                { 0xA7ECD33D, 4  }, // 4  - 
+                { 0xC4B0C5AB, 5  }, // 5  - 
+                { 0xC92323D2, 6  }, // 6  - 
+                { 0x405342DA, 7  }, // 7  - 
+                { 0xB6C028D3, 8  }, // 8  - 
+                { 0x635D1CB0, 9  }, // 9  - 
+                { 0x93DF17D1, 10 }, // 10 - 
+                { 0xF1304FA5, 11 }, // 11 - 
+                { 0x4F53170F, 12 }, // 12 - 
+                { 0x907C67B4, 13 }, // 13 - 
+                { 0xB7076415, 14 }  // 14 - 
             };
             
             const uint32_t CrcHash = CRC::Calculate(base + sh->VirtualAddress, sh->SizeOfRawData, CRC::CRC_32());

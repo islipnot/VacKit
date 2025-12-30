@@ -1,6 +1,4 @@
 #pragma once
-#pragma comment(lib, "MinHook.lib")
-#pragma comment(lib, "ntdll.lib")
 
 #define WIN32_LEAN_AND_MEAN
 
@@ -17,6 +15,6 @@
 #include <format>
 
 #include "MinHook/MinHook.h"
-#include "crc.h"
+#include "crc32/crc.h"
 
-static_assert(sizeof(void*) == 4, "VacLogger must compile for x86");
+static_assert(sizeof(void*) == 8, "VacLogger must compile for x64");

@@ -11,6 +11,9 @@ to some degree, so use a burner account and don't cheat!
 - Encrypted VAC module parameters
 - Every call to runfunc (with address and time)
 
+While VAC's detection vectors typically don't change between updates, module CRC's will. You must manually use `SigTester` to 
+generate .text CRC's for VAC modules and update them in the logger yourself if you want them to be labeled.
+
 # SigTester
 
 Put any VAC modules in the directory of this and it will automatically detect them via the "VLV" binary signature. It will then 

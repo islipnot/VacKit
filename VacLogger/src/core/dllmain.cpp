@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "hooks.hpp"
-#include "tools.hpp"
+#include "logging/hooks.hpp"
+#include "logging/tools.hpp"
 
 #define CreateHookApi(dll, fn, dst, src) MH_CreateHookApi(dll, fn, dst, reinterpret_cast<void**>(src))
 
@@ -72,6 +72,8 @@ static void ThreadEntry()
         CreateHookApi(k32, "CreateFileW",         hkCreateFileW,         &oCreateFileW);
 
         CreateHookApi(k32, "ReadProcessMemory",   hkReadProcessMemory,   &oReadProcessMemory);
+
+        CreateHookApi(k32, "WriteProcessMemory",  hkWriteProcessMemory,  &oWriteProcessMemory);
 
         CreateHookApi(k32, "WideCharToMultiByte", hkWideCharToMultiByte, &oWideCharToMultiByte);
 

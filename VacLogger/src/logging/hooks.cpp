@@ -32,6 +32,20 @@ HANDLE WINAPI hkCreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwS
     return oCreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 }
 
+BOOL WINAPI hkWriteProcessMemory(HANDLE hProcess, LPVOID lpBaseAddress, LPCVOID lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesWritten)
+{
+    wchar_t path[MAX_PATH];
+    DWORD sz = MAX_PATH;
+
+    if (QueryFullProcessImageName(hProcess, 0, path, &sz))
+    {
+        logs::basic(_ReturnAddress(), L"WriteProcessMemory: hProcess[{}], lpBaseAddress[{:p}], nSize[{:#x}]", path, lpBaseAddress, nSize);
+    }
+    else logs::basic(_ReturnAddress(), "WriteProcessMemory: invalid handle passed");
+
+    return oWriteProcessMemory(hProcess, lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesWritten);
+}
+
 BOOL WINAPI hkReadProcessMemory(HANDLE hProcess, LPCVOID lpBaseAddress, LPVOID lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesRead)
 {
     wchar_t path[MAX_PATH];

@@ -19,7 +19,7 @@ static uint32_t CalculateCrc(const std::string& FileName)
     file.seekg(0, std::ios::beg);
     file.read(base, FileSz);
     file.close();
-
+    
     // Checking valve signature ("VLV")
 
     if (strncmp(base + 0x40, "VLV", 3))

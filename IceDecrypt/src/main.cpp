@@ -7,7 +7,7 @@
 * VAC-1 param key: { 0xE7, 0x59, 0x78, 0xE1, 0x4D, 0x48, 0x24, 0x38 } (0x3824484DE17859E7)
 */
 
-static void IceDecrypt(BYTE* ctext, BYTE* ptext, UINT size, const BYTE* key)
+static __forceinline void IceDecrypt(BYTE* ctext, BYTE* ptext, UINT size, const BYTE* key)
 {
     ICE_KEY ik;
 
@@ -34,6 +34,6 @@ int main()
 	result.write((const char*)data, sizeof(data));
     result.close();
 
-	std::cout << "Decryption complete. Check result.txt!\n";
+	std::cout << "Decrypted results saved to result.txt!\n";
 	return 0;
 }
